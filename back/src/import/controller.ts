@@ -6,7 +6,6 @@ import { OpenAIService } from '../openai.service';
 export class JiraRow {
   Resumen: string;
   'Clave de incidencia': string;
-  'Tipo de incidencia': string;
   Prioridad: string;
   Responsable: string;
   Descripcion: string;
@@ -68,7 +67,6 @@ export class ImportController {
       const finalRes = await this.openAIService.sendMessage(thirdText, chatId2);
 
       return finalRes;
-      
     } catch (error) {
       throw error;
     }
@@ -88,13 +86,56 @@ export class ImportController {
         secondText = secondText.concat(taskText);
       }
 
-      console.log(initialText);
       const res1 = await this.openAIService.sendMessage(initialText);
-      console.log(res1);
       const chatId1 = res1.parentMessageId;
 
       const finalRes = await this.openAIService.sendMessage(secondText, chatId1);
     
+      return finalRes;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @Post('get-dev-profile')
+  @UseInterceptors(FileInterceptor('file'))
+  async getDevProfile(@UploadedFile() file: Express.Multer.File) {
+    try {
+      const jiraFileRows = this.xlxs.parse<JiraRow>(file);
+      
+      const doneTasksGroupByResponsable: Record<string, JiraRow[]> = {}
+      const toDoTasks: JiraRow[] = [];
+
+      for (const jiraFileRow of jiraFileRows) {
+        if (jiraFileRow['Estado'] ==  "Listo") {
+          const responsable = jiraFileRow['Responsable'];
+
+          doneTasksGroupByResponsable[responsable] = [...(doneTasksGroupByResponsable[responsable] || []), jiraFileRow]
+        } 
+        
+        if (jiraFileRow['Estado'] == "Para hacer") {
+          toDoTasks.push(jiraFileRow);
+        }
+      }
+
+      let initialText = "Te voy a copiar la informacion de un tablero de Jira en donde se le asignan a los distintos desarrolladores de una empresa las distintas tareas. Cada tarea tiene una clave, resumen y descripción.  La idea es que yo te pase todos los desarrolladores de la empresa con las tareas que realizó y la información de cada tarea. Por cada desarrollador te voy a pedir que hagas una lista con sus tareas y palabras claves sobre lo que estuvo trabajando. ";
+
+      let secondText = "Ahora te voy a pasar todos los desarrolladores y las tareas que ya realizó. La idea es que hagas un resumen sobre lo que estuvo trabajando en base a sus tareas asignadas. Los desarrolladores son:";
+      console.log(doneTasksGroupByResponsable);
+      for (const [responsable, jiraRows] of Object.entries(doneTasksGroupByResponsable)) {
+        let responsableTasksText = `El desarrollador ${responsable} se encargó de hacer las siguientes tareas: `;
+        for (const jiraRow of jiraRows) {
+          let taskText = `La tarea con clave ${jiraRow['Clave de incidencia']}, resumen ${jiraRow['Resumen']} y descripción ${jiraRow['Descripcion']}`;
+          responsableTasksText = responsableTasksText.concat(taskText);
+        }
+        secondText = secondText.concat(responsableTasksText)
+      }
+
+      const res1 = await this.openAIService.sendMessage(initialText);
+      const chatId1 = res1.parentMessageId;
+
+      const finalRes = await this.openAIService.sendMessage(secondText, chatId1);
+
       return finalRes;
     } catch (error) {
       throw error;
