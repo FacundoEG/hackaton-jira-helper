@@ -23,6 +23,7 @@ export class ImportController {
   @UseInterceptors(FileInterceptor('file'))
   async assignTasks(@UploadedFile() file: Express.Multer.File) {
     try {
+      console.log("LLego")
       const jiraFileRows = this.xlxs.parse<JiraRow>(file);
       
       const doneTasksGroupByResponsable: Record<string, JiraRow[]> = {}
