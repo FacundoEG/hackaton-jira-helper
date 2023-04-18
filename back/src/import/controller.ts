@@ -6,6 +6,7 @@ import { OpenAIService } from '../openai.service';
 export class JiraRow {
   Resumen: string;
   'Clave de incidencia': string;
+  'Tipo de incidencia': string;
   Prioridad: string;
   Responsable: string;
   Descripcion: string;
@@ -21,7 +22,7 @@ export class ImportController {
 
   @Post('assign-tasks')
   @UseInterceptors(FileInterceptor('file'))
-  async importJiraCSV(@UploadedFile() file: Express.Multer.File) {
+  async assignTasks(@UploadedFile() file: Express.Multer.File) {
     try {
       const jiraFileRows = this.xlxs.parse<JiraRow>(file);
       
@@ -68,6 +69,33 @@ export class ImportController {
 
       return finalRes;
       
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @Post('create-tasks')
+  @UseInterceptors(FileInterceptor('file'))
+  async createEpics(@UploadedFile() file: Express.Multer.File, description: string) {
+    try {
+      const jiraFileRows = this.xlxs.parse<JiraRow>(file);
+  
+      let initialText = `En base siguiente descripción de una empresa: ${description}. Te voy a copiar la informacion del tablero de Jira de esta misma empresa en donde hay distintas tareas que están siendo desarrolladas. Cada tarea tiene una clave, resumen y descripción. La idea es que en base a la descripción que te mandé y las tareas que suele desarrollar esta empresa, te voy a pedir que listes nuevas tareas que esta empersa pueda realizar para aportar un valor de negocio. Después de enviarte la lista de tareas, te pediré una lista de nuevas posibles tareas con su resumen.`;
+
+      let secondText = "Ahora te voy a pasar la lista de todas las tareas que realiza la empresa. La idea es que hagas una lista con nuevas posibles tareas que puede llevar a cabo la empresa para aportar valor de negocio y te bases en la descripción de la empresa que te mande anteriorimente y la lista de todas las tareas que te voy a pasar ahora. Necesito que me listes estas posibles nuevas tareas con su resumen. Las tareas que ya desarrolló la empresa son:";
+      for (const jiraRow of jiraFileRows) {
+        let taskText = `La tarea con clave ${jiraRow['Clave de incidencia']}, resumen ${jiraRow['Resumen']} y descripción ${jiraRow['Descripcion']}`;
+        secondText = secondText.concat(taskText);
+      }
+
+      console.log(initialText);
+      const res1 = await this.openAIService.sendMessage(initialText);
+      console.log(res1);
+      const chatId1 = res1.parentMessageId;
+
+      const finalRes = await this.openAIService.sendMessage(secondText, chatId1);
+    
+      return finalRes;
     } catch (error) {
       throw error;
     }
