@@ -6,12 +6,13 @@ const CsvFileUploader = ({ onCsvFileUpload }) => {
   const handleCsvFileUpload = useCallback(
     (acceptedFiles) => {
       // Leer el archivo CSV y llamar a la función de devolución de llamada con los datos del archivo
-      const reader = new FileReader();
+     onCsvFileUpload(acceptedFiles)
+      /*  const reader = new FileReader();
       reader.onload = () => {
         const csvData = reader.result;
         onCsvFileUpload(csvData);
-      };
-      reader.readAsText(acceptedFiles[0]);
+        reader.readAsText(acceptedFiles[0]);
+      }; */
     },
     [onCsvFileUpload]
   );
