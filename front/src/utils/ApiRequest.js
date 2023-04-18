@@ -13,7 +13,6 @@ export class ApiRequest {
         return data;
     }
     async importCsv(file, functionality, setData, setLoading, setError){
-      debugger
         const formData = new FormData();
         formData.append('file', file[0]);
         setLoading(true)
@@ -32,4 +31,24 @@ export class ApiRequest {
             setError(true)
           });
     }
+    async importCsvDescription(file, description, functionality, setData, setLoading, setError){
+      const formData = new FormData();
+      formData.append('file', file[0]);
+      formData.append('description', description);
+      setLoading(true)
+      await axios.post(`${this.backUrl}/import/${functionality}`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }).then(response => {
+          // Manejar la respuesta del back-end
+          console.log(response.data);
+          setData(response.data)
+          setLoading(false)
+        }).catch(error => {
+          // Manejar errores de la solicitud
+          console.error(error);
+          setError(true)
+        });
+  }
 }

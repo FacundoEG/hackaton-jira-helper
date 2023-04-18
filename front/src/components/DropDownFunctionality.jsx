@@ -20,6 +20,7 @@ const DropDownFunctionality = ({option, setOption}) => {
         <option value="">Seleccionar opción</option>
         <option value={functionalities.taskAssign}>Asignación de tareas</option>
         <option value={functionalities.taskGenerate}>Generación de nuevas tareas</option>
+        <option value={functionalities.devProfile}>Generación de perfil de developer</option>
       </select>
     </div>
   );
